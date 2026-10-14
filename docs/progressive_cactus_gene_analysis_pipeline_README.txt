@@ -51,16 +51,17 @@ Inputs:
 --------------------------------------------------------------------------------
 4. step4_reverse_complement_add_missingbp.sh
 --------------------------------------------------------------------------------
-Description: Converts filtered MAF files into aligned FASTA (.aln) format. It concatenates each file's MAF blocks per species, pads species absent from a block with dashes, and reverse-complements based on the reference strand in the BED file. Bases a species skips between consecutive MAF blocks are unaligned sequence and are deliberately not added back: filling them would force gap columns into the reference and shift the frame of the other species relative to it. Also writes extraction_summary.tsv to the output directory.
+Description: Converts filtered MAF files into aligned FASTA format. It dynamically fills authorized gaps (using the CSV from Step 2) and reverse-complements based on reference strand data.
 
 Usage:
-  ./step4_reverse_complement_add_missingbp.sh -m <step3_filtered_dir> -o <output_dir> -b <bed_file> [-t <threads>]
+  ./step4_reverse_complement_add_missingbp.sh -m <step3_filtered_dir> -g <genome_fasta_dir> -o <output_dir> -b <bed_file> -c <step2_combined_summary_file> [-t <threads>]
 
 Inputs:
   - -m: Directory of filtered MAF files.
+  - -g: Directory containing reference genome fasta files.
   - -o: Output directory for .aln files.
   - -b: BED file of target regions (used for strand lookup).
-  - -t: Number of parallel threads (default: 4).
+  - -c: The combined_all_species.csv file generated in Step 2.
 
 
 --------------------------------------------------------------------------------
@@ -129,7 +130,7 @@ Inputs:
 --------------------------------------------------------------------------------
 9. step9_trimming_duplicate_bases.py
 --------------------------------------------------------------------------------
-Description: Trims each stitched alignment to the reference CDS using the BED exon coordinates. It detects the BED convention once per run (0-based half-open or 1-based inclusive) and, per file, whether step 1 extracted one extra base per exon; that base is removed at the same columns in every species. Columns where the reference row has a gap are also removed. A file is written only if the trimmed reference row equals its FNA sequence (N and IUPAC ambiguity codes match any base they stand for). Every file, written or refused, is listed with its status and reason in <output_dir>/step9_trimming_report.tsv. Files refused as EXTRACTION_SHIFTED cannot be repaired here; rerun step 1 for them with corrected coordinates.
+Description: Trims extraneous padding and intron bleed-over from the mafextractions. It compares the alignment to the true Reference FNA sequence, strictly forcing the sequence to adhere to the correct biological reading frame.
 **Before running step9, run clean_nucleotide_fasta_headers.py on the reference nucleotide fasta file first**
 
 Usage:
@@ -138,7 +139,7 @@ Usage:
 Inputs:
   - <step8_stitched_dir>: Stitched alignments from step 8.
   - <output_dir>: Destination for the trimmed .aln files.
-  - <reference_nucleotide_fna_file>: Plain-text FASTA of true reference nucleotide sequences, with the transcript ID as the first word of each header (gzipped FASTA is not supported).
+  - <reference_nucleotide_fna_file>: Fasta file of true reference nucleotide sequences.
   - <bed_file>: Reference BED file containing exon coordinates and Transcript IDs.
   - <threads>: Number of threads to use.
 
