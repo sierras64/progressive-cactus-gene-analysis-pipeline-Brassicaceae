@@ -1,9 +1,9 @@
 # Progressive Cactus Gene Analysis Pipeline
 
-This folder is Stage 3 of LINGUA (see the top-level `README.md`). It takes the candidate de novo genes that pass
-Stage 2 (`../2_homolog_exclusion/`), extracts their orthologous regions from the Progressive Cactus whole-genome
-alignment in every species and in the ancestral genomes that Progressive Cactus reconstructs at internal nodes, and
-writes the per-species alignments and indel and stop-codon tables that Stage 4 (`../4_enablers/`) reads.
+This pipeline takes a set of reference-species genes (for example, candidate de novo genes), extracts their
+orthologous regions from the Progressive Cactus whole-genome alignment in every species and in the ancestral genomes
+that Progressive Cactus reconstructs at internal nodes, and writes per-species alignments plus start-codon,
+stop-codon and indel tables for downstream analysis.
 
 Extends Progressive Cactus's HAL alignments into gene- and exon-level comparative
 analysis — extraction, multi-exon stitching, frame validation, and codon-level
@@ -35,14 +35,19 @@ transcript coordinates (BED), the pipeline:
 4. Filters out species/sequences showing atypical genomic jumps (>50kb on the
    same chromosome, or a jump between chromosomes) — likely alignment artifacts,
    though possibly genome assembly or annotation errors.
-5. Fills missing bases from each species' genome FASTA and reverse-complements
-   sequences per the reference strand (MAF tools assume the positive strand by
-   default).
+5. Concatenates each region's MAF blocks into one aligned FASTA, padding species
+   absent from a block with gaps, and reverse-complements sequences per the
+   reference strand (MAF tools assume the positive strand by default). Bases a
+   species skips between consecutive blocks are unaligned sequence and are
+   deliberately not added back: filling them would force gap columns into the
+   reference and shift the other species' frame relative to it.
 6. Stitches individual exon blocks into full-length transcripts using the
    reference species' transcript IDs.
-7. Trims padding and intron bleed-over introduced by the whole-genome aligner,
-   validating sequence length, identity, and reading-frame periodicity against
-   the reference nucleotide FASTA.
+7. Trims each stitched alignment to the reference CDS using the BED exon
+   coordinates: removes the extra base the MAF extraction (`step1_mafextractor.sh`)
+   can pull in per exon, and the columns where the reference has a gap. A file is written only if the trimmed
+   reference row matches the reference nucleotide FASTA; every other file is
+   listed with its reason in `step9_trimming_report.tsv`.
 8. Analyzes the validated, per-species alignment to locate in-frame start
    codons (ATG) and stop codons (TAA/TAG/TGA), identify frameshift-causing
    indels — including specific 3bp insertions that create a premature stop
@@ -60,12 +65,12 @@ lives in [`docs/progressive_cactus_gene_analysis_pipeline_README.txt`](docs/prog
 | 1 | `step1_mafextractor.sh` | Extract localized MAF blocks at target coordinates |
 | 2 | `step2_missingbp_summaries.sh` | Summarize species presence / missing bp between blocks |
 | 3 | `step3_filtering_species.py` | Drop species with atypical genomic jumps |
-| 4 | `step4_reverse_complement_add_missingbp.sh` | MAF → aligned FASTA, gap-fill, strand-correct |
+| 4 | `step4_reverse_complement_add_missingbp.sh` | MAF → aligned FASTA, concatenate blocks, strand-correct |
 | 5 | `step5_validate_reverse_complement.py` | Validate strand orientation via local alignment |
 | 6 | `step6_update_summary_files.py` | Sync FASTA-extraction summary with the BED file |
 | 7 | `step7_first_stage_validation.py` | Nucleotide-count integrity check across raw/filtered/extracted files |
 | 8 | `step8_stitching_exons.sh` | Stitch exon blocks into full transcripts |
-| 9 | `step9_trimming_duplicate_bases.py` | Trim padding/intron bleed-over, enforce reading frame |
+| 9 | `step9_trimming_duplicate_bases.py` | Trim to the reference CDS by exon coordinates; report refused files |
 | 10 | `step10_second_stage_validation.py` | Confirm final sequences match reference length/content |
 | 11 | `step11_update_stitched_exons_summary.py` | Compare expected vs. actual stitched-exon lengths |
 | 12 | `step12_identify_start_codons.sh` | Locate in-frame start codons |
@@ -82,7 +87,6 @@ reference nucleotide FASTA before running step 9 (see that step's README).
 
 - HAL tools, as bundled with Progressive Cactus (`hal2maf`), to convert the HAL alignment to MAF
 - mafTools (`mafExtractor`)
-- samtools
 - GNU parallel
 - Python 3 with Biopython and pandas
 
@@ -104,4 +108,4 @@ was assembled.
 
 ## Credits
 
-Developed by Sierra C. Sanders in the Casola Lab, Texas A&M University. MIT license (`../LICENSE`).
+Developed by Sierra C. Sanders in the Casola Lab, Texas A&M University. MIT license.
