@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ==============================================================================
-Script: step9_exon_coordinate_trim.py
+Script: step9_trimming_duplicate_bases.py
 Description: Step 9 trimming by exon coordinates, for any species. Works out two things
 from the data instead of assuming them:
 
@@ -46,7 +46,7 @@ equals the species prefix of the step 8 file name
 (<species>_<transcriptID>_<chr>_<start>_<end>.aln). The transcript is identified by an
 ID in the file name that is in the BED and whose exon start/end match the file name.
 
-Usage: python3 scripts/step9_exon_coordinate_trim.py <step8_stitched_dir> <output_dir> <reference_nucleotide_fna_file> <bed_file> <threads>
+Usage: python3 scripts/step9_trimming_duplicate_bases.py <step8_stitched_dir> <output_dir> <reference_nucleotide_fna_file> <bed_file> <threads>
 ==============================================================================
 """
 
@@ -394,7 +394,7 @@ def sha256(path):
 
 def main():
     if len(sys.argv) != 6:
-        print("Usage: python3 step9_exon_coordinate_trim.py <step8_stitched_dir> <output_dir> <reference_nucleotide_fna_file> <bed_file> <threads>")
+        print("Usage: python3 step9_trimming_duplicate_bases.py <step8_stitched_dir> <output_dir> <reference_nucleotide_fna_file> <bed_file> <threads>")
         sys.exit(1)
     input_dir, output_dir, fna_file, bed_file = sys.argv[1:5]
     try:

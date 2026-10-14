@@ -108,4 +108,4 @@ was assembled.
 
 ## Credits
 
-Developed by Sierra C. Sanders in the Casola Lab, Texas A&M University. MIT license.
+Developed by Sierra C. Sanders in the Casola Lab, Texas A&M University.
